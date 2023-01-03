@@ -8,9 +8,6 @@ The commands below will build all Kubernetes resources as Docker images. You can
 - `docker tag k8s.gcr.io/kube-scheduler-amd64:v1.20.15-dirty gitlab.com/coreweave/kubernetes:kube-scheduler`
 - `docker push gitlab.com/coreweave/kubernetes:kube-scheduler`
 
-### Using Kubernetes Images
-Once you've pushed the Docker image, you can edit the Deployment or DaemonSet to use your Docker image/tag.
-
 ---
 
 # Kubernetes (K8s)
