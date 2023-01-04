@@ -149,10 +149,6 @@ func (g *genericScheduler) Schedule(ctx context.Context, fwk framework.Framework
 		return result, ErrNoNodesAvailable
 	}
 
-	if strings.Contains(pod.Namespace, "tenant") {
-		ctx = context.WithValue(ctx, "tenant", true)
-	}
-
 	feasibleNodes, filteredNodesStatuses, err := g.findNodesThatFitPod(ctx, fwk, state, pod)
 	if err != nil {
 		return result, err
