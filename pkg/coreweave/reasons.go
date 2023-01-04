@@ -2,9 +2,12 @@ package coreweave
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strings"
 )
+
+var hiddenTaints map[string]bool
 
 type Reason struct {
 	Reason   string
@@ -13,6 +16,16 @@ type Reason struct {
 }
 
 type Reasons []Reason
+
+// init loads the environment variables into memory
+func init() {
+	hiddenTaints = make(map[string]bool)
+	taintsEnv := os.Getenv("CW_HIDDEN_TAINTS")
+	taints := strings.Split(taintsEnv, ",")
+	for _, v := range taints {
+		hiddenTaints[v] = true
+	}
+}
 
 func (r Reasons) Len() int {
 	return len(r)
@@ -24,6 +37,15 @@ func (r Reasons) Less(i, j int) bool {
 	return r[i].Priority < r[j].Priority
 }
 
+// HiddenTaint accepts a namespace and taint key to return if reason message should be visible
+func HiddenTaint(namespace string, key string) bool {
+	if !strings.Contains(namespace, "tenant") {
+		return false
+	}
+	return hiddenTaints[key]
+}
+
+// AsStrings on Reasons will return a priority sorted list of reasons
 func (r Reasons) AsStrings() []string {
 	sort.Sort(r)
 	var reasons []string
@@ -49,6 +71,7 @@ func reasonPriority(reason string) int {
 	return 99
 }
 
+// SanitizeTenantReasons accepts a map of reasons to return a complete list of Reasons used in this package
 func SanitizeTenantReasons(reasons map[string]int) Reasons {
 	var newReasons Reasons
 	for k, v := range reasons {

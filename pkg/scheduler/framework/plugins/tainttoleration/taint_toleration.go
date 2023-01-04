@@ -19,12 +19,10 @@ package tainttoleration
 import (
 	"context"
 	"fmt"
-	"os"
-	"strings"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
+	"k8s.io/kubernetes/pkg/coreweave"
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 	pluginhelper "k8s.io/kubernetes/pkg/scheduler/framework/plugins/helper"
 )
@@ -46,17 +44,6 @@ const (
 	// ErrReasonNotMatch is the Filter reason status when not matching.
 	ErrReasonNotMatch = "node(s) had taints that the pod didn't tolerate"
 )
-
-var hiddenTaints map[string]bool
-
-func init() {
-	hiddenTaints = make(map[string]bool)
-	taintsEnv := os.Getenv("CW_HIDDEN_TAINTS")
-	taints := strings.Split(taintsEnv, ",")
-	for _, v := range taints {
-		hiddenTaints[v] = true
-	}
-}
 
 // Name returns name of the plugin. It is used in logs, etc.
 func (pl *TaintToleration) Name() string {
@@ -82,10 +69,8 @@ func (pl *TaintToleration) Filter(ctx context.Context, state *framework.CycleSta
 	errReason := fmt.Sprintf("node(s) had taint {%s: %s}, that the pod didn't tolerate",
 		taint.Key, taint.Value)
 
-	if strings.Contains(pod.Namespace, "tenant") {
-		if hiddenTaints[taint.Key] {
-			errReason = fmt.Sprintf("node(s) had taint that the pod didn't tolerate")
-		}
+	if coreweave.HiddenTaint(pod.Namespace, taint.Key) {
+		errReason = fmt.Sprintf("node(s) had taint that the pod didn't tolerate")
 	}
 
 	return framework.NewStatus(framework.UnschedulableAndUnresolvable, errReason)
