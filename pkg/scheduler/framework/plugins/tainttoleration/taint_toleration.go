@@ -19,6 +19,8 @@ package tainttoleration
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,6 +47,17 @@ const (
 	ErrReasonNotMatch = "node(s) had taints that the pod didn't tolerate"
 )
 
+var hiddenTaints map[string]bool
+
+func init() {
+	hiddenTaints = make(map[string]bool)
+	taintsEnv := os.Getenv("CW_HIDDEN_TAINTS")
+	taints := strings.Split(taintsEnv, ",")
+	for _, v := range taints {
+		hiddenTaints[v] = true
+	}
+}
+
 // Name returns name of the plugin. It is used in logs, etc.
 func (pl *TaintToleration) Name() string {
 	return Name
@@ -68,6 +81,13 @@ func (pl *TaintToleration) Filter(ctx context.Context, state *framework.CycleSta
 
 	errReason := fmt.Sprintf("node(s) had taint {%s: %s}, that the pod didn't tolerate",
 		taint.Key, taint.Value)
+
+	if strings.Contains(pod.Namespace, "tenant") {
+		if hiddenTaints[taint.Key] {
+			errReason = fmt.Sprintf("node(s) had taint that the pod didn't tolerate")
+		}
+	}
+
 	return framework.NewStatus(framework.UnschedulableAndUnresolvable, errReason)
 }
 

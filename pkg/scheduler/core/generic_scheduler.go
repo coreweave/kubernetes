@@ -19,6 +19,7 @@ package core
 import (
 	"context"
 	"fmt"
+	"k8s.io/kubernetes/pkg/coreweave"
 	"math/rand"
 	"sort"
 	"strings"
@@ -85,7 +86,14 @@ func (f *FitError) Error() string {
 		sort.Strings(reasonStrings)
 		return reasonStrings
 	}
-	reasonMsg := fmt.Sprintf(NoNodeAvailableMsg+": %v.", f.NumAllNodes, strings.Join(sortReasonsHistogram(), ", "))
+
+	var reasonMsg string
+	if strings.Contains(f.Pod.Namespace, "tenant") {
+		tenantReasons := coreweave.SanitizeTenantReasons(reasons)
+		reasonMsg = fmt.Sprintf(NoNodeAvailableMsg+": %v.", f.NumAllNodes, strings.Join(tenantReasons.AsStrings(), ", "))
+	} else {
+		reasonMsg = fmt.Sprintf(NoNodeAvailableMsg+": %v.", f.NumAllNodes, strings.Join(sortReasonsHistogram(), ", "))
+	}
 	return reasonMsg
 }
 
@@ -139,6 +147,10 @@ func (g *genericScheduler) Schedule(ctx context.Context, fwk framework.Framework
 
 	if g.nodeInfoSnapshot.NumNodes() == 0 {
 		return result, ErrNoNodesAvailable
+	}
+
+	if strings.Contains(pod.Namespace, "tenant") {
+		ctx = context.WithValue(ctx, "tenant", true)
 	}
 
 	feasibleNodes, filteredNodesStatuses, err := g.findNodesThatFitPod(ctx, fwk, state, pod)
