@@ -70,7 +70,7 @@ func (pl *TaintToleration) Filter(ctx context.Context, state *framework.CycleSta
 		taint.Key, taint.Value)
 
 	if coreweave.HiddenTaint(pod.Namespace, taint.Key) {
-		errReason = fmt.Sprintf("node(s) had taint that the pod didn't tolerate")
+		errReason = fmt.Sprintf("node(s) had multiple taints that the pod didn't tolerate")
 	}
 
 	return framework.NewStatus(framework.UnschedulableAndUnresolvable, errReason)
