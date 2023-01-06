@@ -1,0 +1,22 @@
+default:
+  tags:
+    - ord1-tenant
+
+stages:
+  - build
+  - push
+
+build:
+  stage: build
+  script:
+    - make quick-release-images
+
+scheduler:
+  stage: push
+  needs:
+    - job: build
+      optional: false
+  script:
+    - TAG=$(docker load -i _output/release-images/amd64/kube-scheduler.tar | cut -d' ' -f3)
+    - docker tag $TAG registry.gitlab.com/coreweave/kubernetes:kube-scheduler-$CI_COMMIT_SHORT_SHA
+    - docker push registry.gitlab.com/coreweave/kubernetes:kube-scheduler-$CI_COMMIT_SHORT_SHA
