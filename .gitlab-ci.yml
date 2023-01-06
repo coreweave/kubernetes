@@ -8,6 +8,9 @@ stages:
 
 build:
   stage: build
+  before_script:
+    - apt update
+    - apt install make golang -y
   script:
     - make quick-release-images
 
