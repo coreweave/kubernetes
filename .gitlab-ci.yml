@@ -1,0 +1,22 @@
+default:
+  tags:
+    - ord1-tenant
+
+image: ubuntu:22.10
+
+services:
+  - docker:dind
+
+stages:
+  - build
+
+build:
+  stage: build
+  before_script:
+    - apt update
+    - apt install make rsync -y
+  script:
+    - make quick-release-images
+    - TAG=$(docker load -i _output/release-images/amd64/kube-scheduler.tar | cut -d' ' -f3)
+    - docker tag $TAG registry.gitlab.com/coreweave/kubernetes:kube-scheduler-$CI_COMMIT_SHORT_SHA
+    - docker push registry.gitlab.com/coreweave/kubernetes:kube-scheduler-$CI_COMMIT_SHORT_SHA

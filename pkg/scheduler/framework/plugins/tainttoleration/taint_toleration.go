@@ -19,10 +19,10 @@ package tainttoleration
 import (
 	"context"
 	"fmt"
-
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
+	"k8s.io/kubernetes/pkg/coreweave"
 	"k8s.io/kubernetes/pkg/scheduler/framework"
 	pluginhelper "k8s.io/kubernetes/pkg/scheduler/framework/plugins/helper"
 )
@@ -68,6 +68,11 @@ func (pl *TaintToleration) Filter(ctx context.Context, state *framework.CycleSta
 
 	errReason := fmt.Sprintf("node(s) had taint {%s: %s}, that the pod didn't tolerate",
 		taint.Key, taint.Value)
+
+	if coreweave.HiddenTaint(pod.Namespace, taint.Key) {
+		errReason = fmt.Sprintf("node(s) had multiple taints that the pod didn't tolerate")
+	}
+
 	return framework.NewStatus(framework.UnschedulableAndUnresolvable, errReason)
 }
 
