@@ -2,6 +2,8 @@ default:
   tags:
     - ord1-tenant
 
+image: ubuntu:22.10
+
 services:
   - docker:dind
 
